@@ -1,0 +1,32 @@
+﻿@using Smidge
+@inject SmidgeHelper _smidgeHelper
+@{
+    _smidgeHelper.CreateCssBundle("inline-css-bundle").RequiresCss("~/content/css/style.css");
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Blog Site  </title>
+
+    <!-- Smidge CSS bundle -->
+    @await _smidgeHelper.CssHereAsync("inline-css-bundle")
+
+   
+</head>
+<body>
+    <header>
+       <!--Some header-->
+    </header>
+
+    <main>
+        @RenderBody() 
+    </main>
+
+    <footer>
+        <p>@DateTime.Now.Year My Umbraco Site</p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,89 @@
+﻿@using System.Text.RegularExpressions
+@using Umbraco.Cms.Web.Common.PublishedModels;
+@using Microsoft.AspNetCore.Http;
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Blog>
+@inject IHttpContextAccessor  _httpContextAccessor;
+
+@{
+    Layout = "_Layout.cshtml";
+    var pageSize = 5; // Number of posts per page
+    var pageNumber = _httpContextAccessor.HttpContext?.GetRequestValue("page");
+    var tag = _httpContextAccessor.HttpContext?.GetRequestValue("tag");
+
+    var filteredPosts = string.IsNullOrEmpty(tag)
+    ? Model.Children().OfType<BlogPost>() 
+    : Model.Children().OfType<BlogPost>().Where(x =>x.Tags!=null? x.Tags.Select(t=>t.Trim().ToLower()).Contains(tag.Trim().ToLower()):false);
+
+    var tags = Model.Children().OfType<BlogPost>().FirstOrDefault()?.Tags;
+    int currentPageNumber = int.TryParse(pageNumber, out var parsedPage) && parsedPage > 0 ? parsedPage : 1;
+
+    var blogPosts = filteredPosts
+        .OrderByDescending(post => post.PublishDate)
+        .Skip((currentPageNumber - 1) * pageSize)
+        .Take(pageSize)
+        .ToList();
+
+
+
+
+    var totalPosts = filteredPosts.Count();
+    var totalPages = (int)Math.Ceiling((double)totalPosts / pageSize);
+   
+}
+
+
+<div class="blog-lobby">
+    <h1 class="blog-title">@Model.Title</h1>
+    <p class="blog-description">@Html.Raw(Model.Description)</p>
+</div>
+<div class="blog-container">
+    @foreach (var blogPost in blogPosts)
+    {
+      
+        int maxLength = 200;
+
+        // Strip HTML tags to count only the visible text
+        string bodyContentText = blogPost?.BodyContent?.ToString();
+
+        // Trim the plain text to 200 characters, ensuring it's not too long
+        var previewContent = bodyContentText.Length > maxLength
+        ? bodyContentText.Substring(0, maxLength) + "..."
+        : bodyContentText;
+        
+          
+        
+        
+        <div class="blog-post">
+            <h2>@blogPost.Title</h2>
+            <p class="blog-meta">Published on @blogPost.PublishDate.ToString("MMMM dd, yyyy") by @blogPost.AuthorName</p>
+            <p class="blog-body">@Html.Raw(bodyContentText)...</p>
+            <a href="@blogPost.Url()" class="read-more">Read More</a>
+            @foreach(var tagString in blogPost.Tags)
+            {
+              
+                    <span class="tag">@tagString </span>
+              
+            }
+         
+        </div>
+    }
+
+    <div class="pagination">
+        @if (currentPageNumber > 1)
+        {
+            <a href="?page=@(currentPageNumber - 1)" class="page-link">Previous</a>
+        }
+
+        @for (var i = 1; i <= totalPages; i++)
+        {
+            <a href="?page=@i" class="page-link @(i == currentPageNumber ? "active" : "")">@i</a>
+        }
+
+        @if (currentPageNumber < totalPages)
+        {
+            <a href="?page=@(currentPageNumber + 1)" class="page-link">Next</a>
+        }
+    </div>
+</div>
+
+
